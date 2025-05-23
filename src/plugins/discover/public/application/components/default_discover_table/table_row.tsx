@@ -9,11 +9,11 @@
  * GitHub history for details.
  */
 
-import { EuiFlexGroup, EuiFlexItem, EuiIcon, EuiSmallButtonIcon } from '@elastic/eui';
+import { EuiFlexGroup, EuiFlexItem, EuiIcon, EuiSmallButtonIcon, EuiButton } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import dompurify from 'dompurify';
 import React, { useCallback, useState } from 'react';
-import { IndexPattern } from '../../../opensearch_dashboards_services';
+import { IndexPattern, getServices } from '../../../opensearch_dashboards_services';
 import { DocViewFilterFn, OpenSearchSearchHit } from '../../doc_views/doc_views_types';
 import { fetchSourceTypeDataCell } from '../data_grid/data_grid_table_cell_value';
 import { DocViewer } from '../doc_viewer/doc_viewer';
@@ -40,12 +40,104 @@ const TableRowUI = ({
   onFilter,
   onClose,
   isShortDots,
+  query,
 }: TableRowProps) => {
+  const services = getServices();
+
   const flattened = indexPattern.flattenHit(row);
   const [isExpanded, setIsExpanded] = useState(false);
   const handleExpanding = useCallback(() => setIsExpanded((prevState) => !prevState), [
     setIsExpanded,
   ]);
+
+  const createNotebook = async (name: string) => {
+    const id = await services.http.post<string>('/api/observability/notebooks/note/savedNotebook', {
+      body: JSON.stringify({
+        name,
+      }),
+    });
+    if (!id) {
+      throw new Error('create notebook error');
+    }
+    return id;
+  };
+
+  const setParagraphs = async (id: string, paragraphs: any) => {
+    const response = await services.http.post(
+      '/api/observability/notebooks/savedNotebook/set_paragraphs',
+      {
+        body: JSON.stringify({
+          noteId: id,
+          paragraphs,
+        }),
+      }
+    );
+    const { id: objectId } = response;
+    if (!objectId) {
+      throw new Error('set paragraphs error');
+    }
+    return objectId;
+  };
+
+  const handleInvestigation = async () => {
+    console.log('handleInvestigation', columns, row);
+
+    const id = await createNotebook('Discover log investigation');
+    const md = JSON.stringify(row._source)
+      .replace(/^\{|\}$/g, '') // 移除最外层的花括号
+      .replace(/"/g, '') // 移除所有引号
+      .replace(/,(\s*\n)/g, '$1')
+      .replace(/(\w+):/g, (match, key) => {
+        return `**${key}**:`;
+      })
+      .replace(/\s+/g, ' ')
+      .trim();
+    const paragraphs = [
+      {
+        id: 'paragraph_87c634a8-c4c9-4806-9dea-a3cbaebfd33a',
+        dateCreated: new Date().toISOString(),
+        dateModified: new Date().toISOString(),
+        dataSourceMDSId: query.dataset.dataSource?.id,
+        dataSourceMDSLabel: query.dataset.dataSource?.title,
+        input: {
+          inputText: '%ppl\n' + query.query,
+          inputType: 'MARKDOWN',
+        },
+        output: [
+          {
+            result: query.query,
+            outputType: 'QUERY',
+            execution_time: '0 ms',
+          },
+        ],
+      },
+      {
+        id: 'paragraph_87c634a8-c4c9-4806-9dea-a3cbaebfd36a',
+        dateCreated: new Date().toISOString(),
+        dateModified: new Date().toISOString(),
+        dataSourceMDSId: query.dataset.dataSource?.id,
+        dataSourceMDSLabel: query.dataset.dataSource?.title,
+        input: {
+          inputText: '%md\n' + md,
+          inputType: 'MARKDOWN',
+        },
+        output: [
+          {
+            result: md,
+            outputType: 'MARKDOWN',
+            execution_time: '0 ms',
+          },
+        ],
+      },
+    ];
+    await setParagraphs(id, paragraphs);
+
+    const path = id;
+    console.log('path', path);
+    services.application.navigateToApp('observability-notebooks#', {
+      path,
+    });
+  };
 
   const tableRow = (
     <tr key={row._id} className={row.isAnchor ? 'osdDocTable__row--highlight' : ''}>
@@ -165,6 +257,11 @@ const TableRowUI = ({
           </EuiFlexItem>
           <EuiFlexItem>
             <DocViewerLinks hit={row} indexPattern={indexPattern} columns={columns} />
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <EuiButton onClick={handleInvestigation} size="s">
+              Investigation
+            </EuiButton>
           </EuiFlexItem>
         </EuiFlexGroup>
         <EuiFlexGroup gutterSize="m">

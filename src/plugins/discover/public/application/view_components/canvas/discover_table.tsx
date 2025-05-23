@@ -30,7 +30,7 @@ interface Props {
   scrollToTop?: () => void;
 }
 
-export const DiscoverTable = ({ rows, scrollToTop }: Props) => {
+export const DiscoverTable = ({ rows, scrollToTop, query }: Props) => {
   const { services } = useOpenSearchDashboards<DiscoverViewServices>();
   const {
     uiSettings,
@@ -131,6 +131,7 @@ export const DiscoverTable = ({ rows, scrollToTop }: Props) => {
       title={savedSearch?.id ? savedSearch.title : ''}
       description={savedSearch?.id ? savedSearch.description : ''}
       scrollToTop={scrollToTop}
+      query={query}
     />
   );
 };

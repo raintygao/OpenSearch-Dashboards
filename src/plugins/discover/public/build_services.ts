@@ -38,6 +38,8 @@ import {
   ToastsStart,
   IUiSettingsClient,
   PluginInitializerContext,
+  HttpStart,
+  ApplicationStart,
 } from 'opensearch-dashboards/public';
 import {
   FilterManager,
@@ -86,6 +88,8 @@ export interface DiscoverServices {
   visualizations: VisualizationsStart;
   storage: Storage;
   uiActions: UiActionsStart;
+  http: HttpStart;
+  application: ApplicationStart;
 }
 
 export function buildServices(
@@ -130,6 +134,8 @@ export function buildServices(
     visualizations: plugins.visualizations,
     storage,
     uiActions: plugins.uiActions,
+    http: core.http,
+    application: core.application,
   };
 }
 

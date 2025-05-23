@@ -12,6 +12,7 @@ import {
   EuiSmallButtonIcon,
   EuiCopy,
   EuiSmallButtonEmpty,
+  EuiButton,
 } from '@elastic/eui';
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
@@ -26,7 +27,7 @@ import { DataPublicPluginSetup, QueryEditorExtensionDependencies } from '../../.
 import { UsageCollectionSetup } from '../../../../usage_collection/public';
 import { CoreSetup } from '../../../../../core/public';
 import { FeedbackStatus } from '../../../common/query_assist';
-
+import { getApplication } from '../../services';
 export interface QueryContext {
   question: string;
   query: string;
@@ -243,6 +244,84 @@ export const QueryAssistSummary: React.FC<QueryAssistSummaryProps> = (props) => 
     [feedback, reportMetric]
   );
 
+  const createNotebook = async (name: string) => {
+    const id = await props.http.post<string>('/api/observability/notebooks/note/savedNotebook', {
+      body: JSON.stringify({
+        name,
+      }),
+    });
+    if (!id) {
+      throw new Error('create notebook error');
+    }
+    return id;
+  };
+
+  const setParagraphs = async (id: string, paragraphs: any) => {
+    const response = await props.http.post(
+      '/api/observability/notebooks/savedNotebook/set_paragraphs',
+      {
+        body: JSON.stringify({
+          noteId: id,
+          paragraphs,
+        }),
+      }
+    );
+    const { id: objectId } = response;
+    if (!objectId) {
+      throw new Error('set paragraphs error');
+    }
+    return objectId;
+  };
+
+  const handleRedirectToNotebook = async () => {
+    const id = await createNotebook('Discover summary');
+    const paragraphs = [
+      {
+        id: 'paragraph_87c634a8-c4c9-4806-9dea-a3cbaebfd33a',
+        dateCreated: new Date().toISOString(),
+        dateModified: new Date().toISOString(),
+        dataSourceMDSId: selectedDataset.current?.dataSource?.id,
+        dataSourceMDSLabel: selectedDataset.current?.dataSource?.title,
+        input: {
+          inputText: '%ppl\n' + queryState.generatedQuery,
+          inputType: 'MARKDOWN',
+        },
+        output: [
+          {
+            result: queryState.generatedQuery,
+            outputType: 'QUERY',
+            execution_time: '0 ms',
+          },
+        ],
+      },
+      {
+        id: 'paragraph_87c634a8-c4c9-4806-9dea-a3cbaebfd36a',
+        dateCreated: new Date().toISOString(),
+        dateModified: new Date().toISOString(),
+        dataSourceMDSId: selectedDataset.current?.dataSource?.id,
+        dataSourceMDSLabel: selectedDataset.current?.dataSource?.title,
+        input: {
+          inputText: '%md\n' + summary,
+          inputType: 'MARKDOWN',
+        },
+        output: [
+          {
+            result: summary,
+            outputType: 'MARKDOWN',
+            execution_time: '0 ms',
+          },
+        ],
+      },
+    ];
+    await setParagraphs(id, paragraphs);
+
+    const path = id;
+    console.log('path', path);
+    getApplication().navigateToApp('observability-notebooks#', {
+      path,
+    });
+  };
+
   const getPanelMessage = useCallback(() => {
     if (loading) {
       return (
@@ -350,6 +429,11 @@ export const QueryAssistSummary: React.FC<QueryAssistSummaryProps> = (props) => 
             <EuiFlexGroup alignItems={'center'} justifyContent={'flexEnd'} gutterSize={'xs'}>
               {actionButtonVisible && (
                 <>
+                  <EuiFlexItem grow={false}>
+                    <EuiButton onClick={handleRedirectToNotebook}>
+                      Investigation in Notebook
+                    </EuiButton>
+                  </EuiFlexItem>
                   <EuiFlexItem grow={false}>
                     <EuiIconTip
                       type={'iInCircle'}

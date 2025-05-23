@@ -58,6 +58,7 @@ const DefaultDiscoverTableUI = ({
   onClose,
   showPagination,
   scrollToTop,
+  query,
 }: DefaultDiscoverTableProps) => {
   const services = getServices();
   const [sampleSize, isShortDots, hideTimeColumn, defaultSortOrder] = useMemo(() => {
@@ -267,6 +268,7 @@ const DefaultDiscoverTableUI = ({
                     onFilter={onFilter}
                     onClose={onClose}
                     isShortDots={isShortDots}
+                    query={query}
                   />
                 );
               }

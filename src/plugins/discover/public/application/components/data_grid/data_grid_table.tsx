@@ -45,6 +45,7 @@ export const DataGridTable = ({
   isLoading = false,
   showPagination,
   scrollToTop,
+  query,
 }: DataGridTableProps) => {
   let adjustedColumns = buildColumns(columns);
   // Handle the case where all fields/columns are removed except the time-field one
@@ -87,6 +88,7 @@ export const DataGridTable = ({
           onFilter={onFilter}
           showPagination={showPagination}
           scrollToTop={scrollToTop}
+          query={query}
         />
       </EuiPanel>
     </div>

@@ -13,6 +13,7 @@ import {
   EuiFlexItem,
   EuiText,
   PopoverAnchorPosition,
+  EuiButton,
 } from '@elastic/eui';
 import classNames from 'classnames';
 import React, { useEffect, useRef, useState } from 'react';
@@ -32,7 +33,7 @@ import { fromUser, getQueryLog, PersistedLog, toUser } from '../../query';
 import { SuggestionsListSize } from '../typeahead/suggestions_component';
 import { QueryLanguageSelector } from './language_selector';
 import { QueryEditorExtensions } from './query_editor_extensions';
-import { getQueryService, getIndexPatterns } from '../../services';
+import { getQueryService, getIndexPatterns, getApplication } from '../../services';
 import { DefaultInputProps } from './editors';
 import { MonacoCompatibleQuerySuggestion } from '../../autocomplete/providers/query_suggestion_provider';
 
@@ -419,6 +420,16 @@ export const QueryEditorUI: React.FC<Props> = (props) => {
         filterBar: props.filterBar,
       });
 
+  const handleNavigateToNotebook = () => {
+    const context = {
+      query,
+    };
+
+    services.application?.navigateToApp('observability-notebooks#', {
+      path: `2b4fba50-2ee1-11f0-b5f7-5517f3f0a01c?query=${query}`,
+    });
+  };
+
   return (
     <div
       className={classNames(
@@ -438,6 +449,7 @@ export const QueryEditorUI: React.FC<Props> = (props) => {
             ? languageEditor.TopBar.Collapsed()
             : languageEditor.TopBar.Expanded && languageEditor.TopBar.Expanded()}
         </div>
+        {/* <EuiButton onClick={handleNavigateToNotebook}>Explore in notebook</EuiButton> */}
         {languageSelector}
         <div className="osdQueryEditor__querycontrols" data-test-subj="osdQueryEditorQueryControls">
           <EuiFlexGroup responsive={false} gutterSize="s" alignItems="center">

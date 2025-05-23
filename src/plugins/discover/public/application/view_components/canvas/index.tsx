@@ -112,6 +112,7 @@ export default function DiscoverCanvas({ setHeaderActionMenu, optionalRef }: Vie
     />
   );
 
+  console.log('data.query.queryString', data.query.queryString.getQuery());
   return (
     <EuiPanel
       panelRef={panelRef}
@@ -156,7 +157,11 @@ export default function DiscoverCanvas({ setHeaderActionMenu, optionalRef }: Vie
               <>
                 <MemoizedDiscoverChartContainer {...fetchState} />
                 {discoverResultsActionBar}
-                <MemoizedDiscoverTable rows={rows} scrollToTop={scrollToTop} />
+                <MemoizedDiscoverTable
+                  rows={rows}
+                  scrollToTop={scrollToTop}
+                  query={data.query.queryString.getQuery()}
+                />
               </>
             ) : (
               <EuiPanel
