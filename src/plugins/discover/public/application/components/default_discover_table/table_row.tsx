@@ -107,46 +107,47 @@ const TableRowUI = ({
 
   const handleInvestigation = async () => {
     const id = await createNotebook('Discover log investigation');
-
-    const paragraphs = [
-      {
-        id: 'paragraph_87c634a8-c4c9-4806-9dea-a3cbaebfd33a',
-        dateCreated: new Date().toISOString(),
-        dateModified: new Date().toISOString(),
-        dataSourceMDSId: query.dataset.dataSource?.id,
-        dataSourceMDSLabel: query.dataset.dataSource?.title,
-        input: {
-          inputText: '%ppl\n' + query.query,
-          inputType: 'MARKDOWN',
-        },
-        output: [
-          {
-            result: query.query,
-            outputType: 'QUERY',
-            execution_time: '0 ms',
+    if (query.language === 'PPL' || query.language === 'SQL') {
+      const paragraphs = [
+        {
+          id: 'paragraph_87c634a8-c4c9-4806-9dea-a3cbaebfd33a',
+          dateCreated: new Date().toISOString(),
+          dateModified: new Date().toISOString(),
+          dataSourceMDSId: query.dataset.dataSource?.id,
+          dataSourceMDSLabel: query.dataset.dataSource?.title,
+          input: {
+            inputText: `%${query.language}\n` + query.query,
+            inputType: 'MARKDOWN',
           },
-        ],
-      },
-      // {
-      //   id: 'paragraph_87c634a8-c4c9-4806-9dea-a3cbaebfd36a',
-      //   dateCreated: new Date().toISOString(),
-      //   dateModified: new Date().toISOString(),
-      //   dataSourceMDSId: query.dataset.dataSource?.id,
-      //   dataSourceMDSLabel: query.dataset.dataSource?.title,
-      //   input: {
-      //     inputText: '%md\n' + md,
-      //     inputType: 'MARKDOWN',
-      //   },
-      //   output: [
-      //     {
-      //       result: md,
-      //       outputType: 'MARKDOWN',
-      //       execution_time: '0 ms',
-      //     },
-      //   ],
-      // },
-    ];
-    await setParagraphs(id, paragraphs);
+          output: [
+            {
+              result: query.query,
+              outputType: 'QUERY',
+              execution_time: '0 ms',
+            },
+          ],
+        },
+        // {
+        //   id: 'paragraph_87c634a8-c4c9-4806-9dea-a3cbaebfd36a',
+        //   dateCreated: new Date().toISOString(),
+        //   dateModified: new Date().toISOString(),
+        //   dataSourceMDSId: query.dataset.dataSource?.id,
+        //   dataSourceMDSLabel: query.dataset.dataSource?.title,
+        //   input: {
+        //     inputText: '%md\n' + md,
+        //     inputType: 'MARKDOWN',
+        //   },
+        //   output: [
+        //     {
+        //       result: md,
+        //       outputType: 'MARKDOWN',
+        //       execution_time: '0 ms',
+        //     },
+        //   ],
+        // },
+      ];
+      await setParagraphs(id, paragraphs);
+    }
 
     const path = id;
     services.application.navigateToApp('observability-notebooks#', {
