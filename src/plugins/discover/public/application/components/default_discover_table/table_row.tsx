@@ -116,7 +116,7 @@ const TableRowUI = ({
           dataSourceMDSId: query.dataset.dataSource?.id,
           dataSourceMDSLabel: query.dataset.dataSource?.title,
           input: {
-            inputText: `%${query.language}\n` + query.query,
+            inputText: `%${query.language.toLowerCase()}\n` + query.query,
             inputType: 'MARKDOWN',
           },
           output: [
