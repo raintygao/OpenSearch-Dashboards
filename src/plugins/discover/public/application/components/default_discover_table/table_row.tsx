@@ -51,9 +51,38 @@ const TableRowUI = ({
   ]);
 
   const createNotebook = async (name: string) => {
-    const id = await services.http.post<string>('/api/observability/notebooks/note/savedNotebook', {
+    const md = JSON.stringify(row._source)
+      .replace(/^\{|\}$/g, '')
+      .replace(/"/g, '')
+      .replace(/,(\s*\n)/g, '$1')
+      .replace(/(\w+):/g, (match, key) => {
+        return `**${key}**:`;
+      })
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const timeBounds = services.data.query.timefilter.timefilter.getBounds();
+    const timeField = indexPattern.timeFieldName ?? '';
+    const id = await services.http.post<string>('/api/notebooks/note/savedNotebook', {
       body: JSON.stringify({
         name,
+        context: {
+          time: row?._source?.[timeField],
+          dataSourceTitle: query.dataset.dataSource?.title,
+          dataSourceId: query.dataset.dataSource?.id,
+          query: query.query,
+          queryLanguage: query.language,
+          timeRange: {
+            from: timeBounds.min,
+            to: timeBounds.max,
+          },
+          filters: query.filterManager?.getFilters() || [],
+          timeField,
+          indexPatternTitle: indexPattern.title,
+          indexPatternId: indexPattern.id,
+          source: 'Discover',
+          content: md,
+        },
       }),
     });
     if (!id) {
@@ -63,15 +92,12 @@ const TableRowUI = ({
   };
 
   const setParagraphs = async (id: string, paragraphs: any) => {
-    const response = await services.http.post(
-      '/api/observability/notebooks/savedNotebook/set_paragraphs',
-      {
-        body: JSON.stringify({
-          noteId: id,
-          paragraphs,
-        }),
-      }
-    );
+    const response = await services.http.post('/api/notebooks/savedNotebook/set_paragraphs', {
+      body: JSON.stringify({
+        noteId: id,
+        paragraphs,
+      }),
+    });
     const { id: objectId } = response;
     if (!objectId) {
       throw new Error('set paragraphs error');
@@ -80,18 +106,8 @@ const TableRowUI = ({
   };
 
   const handleInvestigation = async () => {
-    console.log('handleInvestigation', columns, row);
-
     const id = await createNotebook('Discover log investigation');
-    const md = JSON.stringify(row._source)
-      .replace(/^\{|\}$/g, '') // 移除最外层的花括号
-      .replace(/"/g, '') // 移除所有引号
-      .replace(/,(\s*\n)/g, '$1')
-      .replace(/(\w+):/g, (match, key) => {
-        return `**${key}**:`;
-      })
-      .replace(/\s+/g, ' ')
-      .trim();
+
     const paragraphs = [
       {
         id: 'paragraph_87c634a8-c4c9-4806-9dea-a3cbaebfd33a',
@@ -111,29 +127,28 @@ const TableRowUI = ({
           },
         ],
       },
-      {
-        id: 'paragraph_87c634a8-c4c9-4806-9dea-a3cbaebfd36a',
-        dateCreated: new Date().toISOString(),
-        dateModified: new Date().toISOString(),
-        dataSourceMDSId: query.dataset.dataSource?.id,
-        dataSourceMDSLabel: query.dataset.dataSource?.title,
-        input: {
-          inputText: '%md\n' + md,
-          inputType: 'MARKDOWN',
-        },
-        output: [
-          {
-            result: md,
-            outputType: 'MARKDOWN',
-            execution_time: '0 ms',
-          },
-        ],
-      },
+      // {
+      //   id: 'paragraph_87c634a8-c4c9-4806-9dea-a3cbaebfd36a',
+      //   dateCreated: new Date().toISOString(),
+      //   dateModified: new Date().toISOString(),
+      //   dataSourceMDSId: query.dataset.dataSource?.id,
+      //   dataSourceMDSLabel: query.dataset.dataSource?.title,
+      //   input: {
+      //     inputText: '%md\n' + md,
+      //     inputType: 'MARKDOWN',
+      //   },
+      //   output: [
+      //     {
+      //       result: md,
+      //       outputType: 'MARKDOWN',
+      //       execution_time: '0 ms',
+      //     },
+      //   ],
+      // },
     ];
     await setParagraphs(id, paragraphs);
 
     const path = id;
-    console.log('path', path);
     services.application.navigateToApp('observability-notebooks#', {
       path,
     });
