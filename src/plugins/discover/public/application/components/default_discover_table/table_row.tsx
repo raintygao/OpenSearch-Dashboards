@@ -51,16 +51,6 @@ const TableRowUI = ({
   ]);
 
   const createNotebook = async (name: string) => {
-    const md = JSON.stringify(row._source)
-      .replace(/^\{|\}$/g, '')
-      .replace(/"/g, '')
-      .replace(/,(\s*\n)/g, '$1')
-      .replace(/(\w+):/g, (match, key) => {
-        return `**${key}**:`;
-      })
-      .replace(/\s+/g, ' ')
-      .trim();
-
     const timeBounds = services.data.query.timefilter.timefilter.getBounds();
     const timeField = indexPattern.timeFieldName ?? '';
     const id = await services.http.post<string>('/api/notebooks/note/savedNotebook', {
@@ -81,7 +71,7 @@ const TableRowUI = ({
           indexPatternTitle: indexPattern.title,
           indexPatternId: indexPattern.id,
           source: 'Discover',
-          content: md,
+          content: JSON.stringify(row._source),
         },
       }),
     });
